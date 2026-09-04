@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GETTONE — Sala Giochi Vintage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0c0b12;
+    --bg-panel: #16131f;
+    --bg-panel-2: #1d1829;
+    --magenta: #ff2e7e;
+    --cyan: #16e0d6;
+    --amber: #ffb000;
+    --cream: #f4ede1;
+    --dim: #9088a3;
+    --line: #322b45;
+  }
+ 
+  *{ box-sizing:border-box; margin:0; padding:0; }
+ 
+  html{ scroll-behavior:smooth; }
+ 
+  body{
+    background:var(--bg);
+    color:var(--cream);
+    font-family:'Space Grotesk', sans-serif;
+    overflow-x:hidden;
+  }
+ 
+  .pixel{ font-family:'Press Start 2P', monospace; }
+ 
+  /* scanline overlay */
+  .scanlines{
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.12) 3px
+    );
+    mix-blend-mode:multiply;
+    opacity:.5;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .scanlines{ animation:flicker 6s infinite; }
+  }
+  @keyframes flicker{
+    0%,100%{ opacity:.45; }
+    50%{ opacity:.55; }
+  }
+ 
+  a{ color:inherit; text-decoration:none; }
+ 
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px clamp(20px,5vw,64px);
+    background:rgba(12,11,18,.85);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .logo{
+    font-size:14px;
+    letter-spacing:1px;
+    color:var(--cream);
+  }
+  .logo span{ color:var(--magenta); }
+  .nav-links{ display:flex; gap:32px; font-size:14px; color:var(--dim); }
+  .nav-links a:hover{ color:var(--cyan); }
+  @media (max-width:640px){ .nav-links{ display:none; } }
+ 
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    min-height:92vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+    padding:80px 24px 60px;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 20%, rgba(255,46,126,.18), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(22,224,214,.12), transparent 60%),
+      var(--bg);
+    border-bottom:1px solid var(--line);
+  }
+ 
+  .marquee-frame{
+    display:inline-block;
+    padding:10px 22px;
+    border:2px solid var(--amber);
+    border-radius:6px;
+    color:var(--amber);
+    font-size:11px;
+    letter-spacing:2px;
+    margin-bottom:36px;
+    box-shadow:0 0 18px rgba(255,176,0,.35), inset 0 0 10px rgba(255,176,0,.15);
+  }
+ 
+  .hero h1{
+    font-size:clamp(2.6rem, 8vw, 6rem);
+    line-height:1.05;
+    letter-spacing:.5px;
+    text-shadow:
+      0 0 8px rgba(255,46,126,.6),
+      3px 3px 0 var(--cyan);
+    max-width:16ch;
+  }
+ 
+  .hero p.sub{
+    margin-top:28px;
+    max-width:46ch;
+    color:var(--dim);
+    font-size:clamp(1rem,2.2vw,1.2rem);
+    line-height:1.6;
+  }
+ 
+  .hero .cta-row{
+    margin-top:44px;
+    display:flex; gap:18px; flex-wrap:wrap; justify-content:center;
+  }
+ 
+  .btn{
+    padding:14px 28px;
+    font-family:'Space Grotesk';
+    font-weight:600;
+    font-size:15px;
+    border-radius:4px;
+    cursor:pointer;
+    border:2px solid transparent;
+    transition:transform .15s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn-primary{
+    background:var(--magenta);
+    color:#0c0b12;
+    box-shadow:0 4px 0 #a3134f;
+  }
+  .btn-primary:hover{ box-shadow:0 6px 0 #a3134f; }
+  .btn-ghost{
+    background:transparent;
+    color:var(--cream);
+    border-color:var(--line);
+  }
+  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
+ 
+  .coin-hint{
+    margin-top:56px;
+    font-size:12px;
+    color:var(--dim);
+    letter-spacing:1px;
+  }
+  .coin-hint .pixel{ color:var(--amber); font-size:11px; }
+  @media (prefers-reduced-motion: no-preference){
+    .coin-hint .pixel{ animation:blink 1.4s steps(2) infinite; }
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+ 
+  /* ---------- SECTION LABEL ---------- */
+  .section{
+    padding:100px clamp(20px,6vw,64px);
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .kicker{
+    color:var(--cyan);
+    font-size:13px;
+    letter-spacing:1px;
+    margin-bottom:10px;
+  }
+  .section h2{
+    font-size:clamp(1.8rem,4vw,2.6rem);
+    max-width:20ch;
+    line-height:1.2;
+  }
+  .section .lede{
+    margin-top:18px;
+    max-width:60ch;
+    color:var(--dim);
+    font-size:1.05rem;
+    line-height:1.7;
+  }
+ 
+  /* ---------- CABINET GRID ---------- */
+  .grid{
+    margin-top:56px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+    gap:28px;
+  }
+ 
+  .cabinet{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    transition:border-color .2s ease;
+  }
+  .cabinet:hover{ border-color:var(--magenta); }
+ 
+  .cab-screen{
+    aspect-ratio:4/3;
+    display:flex; align-items:center; justify-content:center;
+    background:#08070c;
+    border-bottom:1px solid var(--line);
+    position:relative;
+  }
+  .cab-screen svg{ width:70%; height:70%; }
+ 
+  .cab-info{ padding:20px 20px 24px; }
+  .cab-info .year{ color:var(--dim); font-size:12px; letter-spacing:1px; }
+  .cab-info h3{ margin-top:6px; font-size:1.15rem; }
+  .cab-info .genre{
+    display:inline-block;
+    margin-top:12px;
+    font-size:11px;
+    letter-spacing:1px;
+    padding:5px 10px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    color:var(--cream);
+  }
+ 
+  /* ---------- INFO STRIP ---------- */
+  .strip{
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    background:var(--bg-panel);
+  }
+  .strip-inner{
+    max-width:1180px; margin:0 auto;
+    padding:56px clamp(20px,6vw,64px);
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:32px;
+  }
+  .stat .num{
+    font-size:2.4rem;
+    color:var(--amber);
+    text-shadow:0 0 12px rgba(255,176,0,.4);
+  }
+  .stat .label{ margin-top:6px; color:var(--dim); font-size:.95rem; }
+ 
+  /* ---------- VISIT ---------- */
+  .visit{
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:48px;
+    align-items:start;
+  }
+  @media (max-width:800px){ .visit{ grid-template-columns:1fr; } }
+ 
+  .hours{ margin-top:28px; }
+  .hours-row{
+    display:flex; justify-content:space-between;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+    font-size:.95rem;
+  }
+  .hours-row .day{ color:var(--cream); }
+  .hours-row .time{ color:var(--dim); }
+ 
+  .visit-card{
+    background:var(--bg-panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:32px;
+  }
+  .visit-card h3{ font-size:1.1rem; margin-bottom:16px; }
+  .visit-card .addr{ color:var(--dim); line-height:1.8; font-size:.95rem; }
+  .visit-card .btn{ margin-top:24px; width:100%; }
+ 
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:40px clamp(20px,6vw,64px) 48px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
+    color:var(--dim); font-size:13px;
+    border-top:1px solid var(--line);
+  }
+  footer .logo{ font-size:13px; }
+</style>
+</head>
+<body>
+ 
+<div class="scanlines"></div>
+ 
+<nav>
+  <div class="logo pixel">GETTONE<span>_</span></div>
+  <div class="nav-links">
+    <a href="#collezione">Collezione</a>
+    <a href="#visita">Visita la sala</a>
+  </div>
+</nav>
+ 
+<section class="hero">
+  <div class="marquee-frame pixel">SALA GIOCHI DAL 1984</div>
+  <h1>Ogni gettone<br>è un viaggio<br>indietro nel tempo.</h1>
+  <p class="sub">Una collezione di cabinati arcade originali, restaurati a mano, pixel per pixel. Nessuna emulazione: solo joystick veri, tubi catodici veri, altoparlanti veri.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#collezione">Guarda la collezione</a>
+    <a class="btn btn-ghost" href="#visita">Dove siamo</a>
+  </div>
+  <div class="coin-hint">INSERISCI GETTONE PER CONTINUARE <span class="pixel">▮</span></div>
+</section>
+ 
+<section class="section" id="collezione">
+  <div class="kicker pixel">// LA COLLEZIONE</div>
+  <h2>Otto cabinati, otto epoche del gioco a moneta.</h2>
+  <p class="lede">Ogni macchina è stata recuperata da sale giochi, bar e luna park chiusi, poi restaurata mantenendo componenti e meccaniche originali dell'epoca.</p>
+ 
+  <div class="grid">
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="70" width="8" height="8" fill="#16e0d6"/>
+          <rect x="22" y="70" width="8" height="8" fill="#16e0d6"/>
+          <rect x="34" y="70" width="8" height="8" fill="#16e0d6"/>
+          <rect x="46" y="70" width="8" height="8" fill="#16e0d6"/>
+          <rect x="58" y="70" width="8" height="8" fill="#16e0d6"/>
+          <rect x="70" y="70" width="8" height="8" fill="#16e0d6"/>
+          <rect x="35" y="15" width="30" height="10" fill="#ff2e7e"/>
+          <rect x="25" y="25" width="50" height="10" fill="#ff2e7e"/>
+          <rect x="30" y="35" width="14" height="10" fill="#ff2e7e"/>
+          <rect x="56" y="35" width="14" height="10" fill="#ff2e7e"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1980</div>
+        <h3>Cosmo Raiders</h3>
+        <span class="genre">Shoot 'em up</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="28" fill="#ffb000"/>
+          <path d="M50 50 L78 38 A28 28 0 1 1 78 62 Z" fill="#0c0b12"/>
+          <circle cx="20" cy="30" r="4" fill="#f4ede1"/>
+          <circle cx="15" cy="70" r="4" fill="#f4ede1"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1982</div>
+        <h3>Maze Muncher</h3>
+        <span class="genre">Labirinto</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="45" y="20" width="10" height="50" fill="#16e0d6"/>
+          <rect x="20" y="65" width="60" height="10" fill="#16e0d6"/>
+          <circle cx="50" cy="15" r="8" fill="#ff2e7e"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1985</div>
+        <h3>Star Patrol</h3>
+        <span class="genre">Sparatutto verticale</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="15" width="70" height="12" fill="#ff2e7e"/>
+          <circle cx="50" cy="55" r="6" fill="#f4ede1"/>
+          <rect x="20" y="80" width="20" height="8" fill="#16e0d6"/>
+          <rect x="60" y="80" width="20" height="8" fill="#16e0d6"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1986</div>
+        <h3>Rally Fever</h3>
+        <span class="genre">Corsa</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="45" width="80" height="10" fill="#ffb000"/>
+          <rect x="30" y="25" width="10" height="20" fill="#ffb000"/>
+          <rect x="60" y="55" width="10" height="20" fill="#ffb000"/>
+          <circle cx="50" cy="20" r="6" fill="#ff2e7e"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1983</div>
+        <h3>Ape Alley</h3>
+        <span class="genre">Platform</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="20" width="8" height="60" fill="#16e0d6"/>
+          <rect x="72" y="20" width="8" height="60" fill="#ff2e7e"/>
+          <circle cx="50" cy="50" r="5" fill="#f4ede1"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1979</div>
+        <h3>Volley Duel</h3>
+        <span class="genre">Sportivo</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="65" width="20" height="20" fill="#ff2e7e"/>
+          <rect x="42" y="50" width="20" height="35" fill="#ff2e7e"/>
+          <rect x="69" y="35" width="20" height="50" fill="#ff2e7e"/>
+          <circle cx="25" cy="55" r="5" fill="#16e0d6"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1987</div>
+        <h3>Pixel Dash</h3>
+        <span class="genre">Piattaforme</span>
+      </div>
+    </div>
+ 
+    <div class="cabinet">
+      <div class="cab-screen">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="25" y="25" width="50" height="50" fill="none" stroke="#ffb000" stroke-width="4"/>
+          <line x1="25" y1="50" x2="75" y2="50" stroke="#ffb000" stroke-width="4"/>
+          <line x1="50" y1="25" x2="50" y2="75" stroke="#ffb000" stroke-width="4"/>
+        </svg>
+      </div>
+      <div class="cab-info">
+        <div class="year">1981</div>
+        <h3>Triplo Otto</h3>
+        <span class="genre">Puzzle / Strategia</span>
+      </div>
+    </div>
+ 
+  </div>
+</section>
+ 
+<div class="strip">
+  <div class="strip-inner">
+    <div class="stat">
+      <div class="num pixel">42</div>
+      <div class="label">cabinati restaurati dal 2016</div>
+    </div>
+    <div class="stat">
+      <div class="num pixel">8</div>
+      <div class="label">decenni di storia del videogioco</div>
+    </div>
+    <div class="stat">
+      <div class="num pixel">1</div>
+      <div class="label">gettone, tempo illimitato</div>
+    </div>
+  </div>
+</div>
+ 
+<section class="section" id="visita">
+  <div class="visit">
+    <div>
+      <div class="kicker pixel">// ORARI</div>
+      <h2>Vieni a giocare dal vivo.</h2>
+      <p class="lede">Niente prenotazione, niente abbonamento: si entra, si prende un gettone al bancone e si gioca finché il cabinato lo permette.</p>
+      <div class="hours">
+        <div class="hours-row"><span class="day">Martedì – Giovedì</span><span class="time">18:00 – 23:30</span></div>
+        <div class="hours-row"><span class="day">Venerdì – Sabato</span><span class="time">18:00 – 01:00</span></div>
+        <div class="hours-row"><span class="day">Domenica</span><span class="time">15:00 – 22:00</span></div>
+        <div class="hours-row"><span class="day">Lunedì</span><span class="time">chiuso — manutenzione cabinati</span></div>
+      </div>
+    </div>
+    <div class="visit-card">
+      <h3 class="pixel">DOVE SIAMO</h3>
+      <p class="addr">Via dei Portici 14<br>10122 Torino, TO<br><br>A due passi da Piazza Castello, ingresso sotto l'insegna al neon rosa.</p>
+      <a class="btn btn-primary" href="#" style="display:block; text-align:center;">Prenota un tavolo</a>
+    </div>
+  </div>
+</section>
+ 
+<footer>
+  <div class="logo pixel">GETTONE<span>_</span></div>
+  <div>© 1984–2026 · Sala Giochi Gettone, Torino</div>
+</footer>
+ 
+</body>
+</html>
